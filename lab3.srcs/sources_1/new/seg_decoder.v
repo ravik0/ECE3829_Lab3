@@ -1,21 +1,12 @@
-`timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
+// Engineer: Ravi Kirschner and Jonathan Lee
 // 
 // Create Date: 09/10/2019 03:57:40 PM
-// Design Name: 
+// Design Name: Seven Segment Decoder
 // Module Name: seg_decoder
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
+// Project Name: DAC Waveform and Moving Block
+// Target Devices: Basys 3
+// Description: This module decodes a 4-bit input into a 6-bit output for the seven-segment display onboard to use and display the correct number.
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
@@ -42,7 +33,7 @@ module seg_decoder(
                 12: SEG=7'b0110001;
                 13: SEG=7'b1000010;
                 14: SEG=7'b0110000;
-                15: SEG=7'b0111000;
+                15: SEG=7'b0111000; //if chosenSwitch has a specific number, then set SEG to its corrisponding value. The SEG values are determined graphically.
             endcase
         end
 endmodule

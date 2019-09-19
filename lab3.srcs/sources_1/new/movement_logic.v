@@ -1,21 +1,15 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
+// Engineer: Ravi Kirschner & Jonathan Lee 
 // 
 // Create Date: 09/16/2019 11:04:56 AM
-// Design Name: 
+// Design Name: Movement Logic 
 // Module Name: movement_logic
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
+// Project Name: DAC Waveform and Moving Block
+// Target Devices: Basys 3
+// Description: This module deals with the logic for moving the block. It takes in a 10Hz clock, the debounced buttons, a signal that says
+// whether a pixel is on the screen or not, a reset signal, and the current horizontal and vertical pixel count. It outputs the RGB value 
+// for the pixel and the current block location in (0,0) -> (19,14)
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
@@ -40,8 +34,9 @@ module movement_logic(
     reg [4:0] posHorizontal = 0;
     reg [3:0] posVertical = 0;
     reg moved = 0;
+    //the moved reg prevents holding the button from doing anything.
     
-    wire withinConstraint;
+    wire withinConstraint; //the location in which the block can be drawn
     
     always @ (posedge clk, posedge reset) begin
         if(reset) begin
@@ -51,21 +46,21 @@ module movement_logic(
         end
         else if(btnU && posVertical != 0 && !moved) begin
             posVertical = posVertical - 1'b1;
-            moved = 1'b1;
+            moved = 1'b1; //if press up & not at the top of the screen
         end
         else if(btnD && posVertical != 14 && !moved) begin
             posVertical = posVertical + 1'b1;
-            moved = 1'b1;
+            moved = 1'b1; //if press down & not at the bottom of the screen
         end
         else if(btnR && posHorizontal != 19 && !moved) begin
             posHorizontal = posHorizontal + 1'b1;
-            moved = 1'b1;
+            moved = 1'b1; //if press right & not at the right of the screen
         end
         else if(btnL && posHorizontal != 0 && !moved) begin
             posHorizontal = posHorizontal - 1'b1;
-            moved = 1'b1;
+            moved = 1'b1; //if press left & not at the left of the screen
         end
-        else if(!btnL && !btnR && !btnU && !btnD) moved = 1'b0;
+        else if(!btnL && !btnR && !btnU && !btnD) moved = 1'b0; //if no buttons pressed, can accept another input.
     end
     
     assign withinConstraint = vcount >= 32 * posVertical && vcount <= 32 * posVertical + 32 && hcount >= 32 * posHorizontal && hcount <= 32 * posHorizontal + 32;
