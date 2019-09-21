@@ -18,25 +18,18 @@ module seven_seg(
     input[3:0] B,
     input[3:0] C,
     input[3:0] D,
+    input reset,
     output [6:0] SEG,
     output reg[3:0] ANODE
     );
     
-    reg clk_en; //this is a pulse for the 800Hz clock. It does not need to be a square wave.
+    wire clk_en; //this is a pulse for the 800Hz clock. It does not need to be a square wave.
     reg [14:0] counter; //15 bit bus to hold up to 31250. 2^15 = 32768, 32768 > 31250.
-    always @ (posedge clk)
-        begin
-            if(counter == 31250-1) 
-                begin
-                    counter <= 0;
-                    clk_en <= 1;
-                end
-            else
-                begin
-                    counter <= counter + 1'b1;
-                    clk_en <= 0;
-                end
-        end
+    always @ (posedge clk, posedge reset)
+        if(reset) counter <= 15'b0;
+        else if(counter == 31250-1) counter <= 15'b0;
+        else counter <= counter + 1'b1;
+    assign clk_en = counter == 31250-1;
     
     reg [3:0] chosenSwitches; //current set of values to be decoded
     reg [1:0] SEL = 2'b00; //current selected anode
@@ -51,12 +44,14 @@ module seven_seg(
                 1: chosenSwitches = B;
                 2: chosenSwitches = C;
                 3: chosenSwitches = D;
+                default: chosenSwitches = 4'b0000;
             endcase //depending on SEL, change the set of values to be decoded
             case(SEL)
                 0: ANODE = 4'b1110;
                 1: ANODE = 4'b1101;
                 2: ANODE = 4'b1011;
                 3: ANODE = 4'b0111;
+                default: ANODE = 4'b1111;
             endcase //depending on SEL, change the current anode that is being activated
         end
         

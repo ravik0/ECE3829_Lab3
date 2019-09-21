@@ -33,6 +33,7 @@ module debounce(
                 else nextState = s0;
             s1: if(btn == 0) nextState = s0;
                 else nextState = s1;
+            default: nextState = s0;
         endcase
             
     assign newBtn = currentState == s1; //s1 means button is 1.

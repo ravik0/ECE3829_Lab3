@@ -61,9 +61,15 @@ module movement_logic(
             moved = 1'b1; //if press left & not at the left of the screen
         end
         else if(!btnL && !btnR && !btnU && !btnD) moved = 1'b0; //if no buttons pressed, can accept another input.
+        else begin
+            posHorizontal = posHorizontal;
+            posVertical = posVertical;
+            moved = moved; //else to prevent latch
+        end
     end
     
-    assign withinConstraint = vcount >= 32 * posVertical && vcount <= 32 * posVertical + 32 && hcount >= 32 * posHorizontal && hcount <= 32 * posHorizontal + 32;
+    assign withinConstraint =( vcount >= 32 * posVertical && vcount <= 32 * posVertical + 32) 
+                            && (hcount >= 32 * posHorizontal && hcount <= 32 * posHorizontal + 32);
                     
     assign red = blank ? 4'b0000 : withinConstraint ? 4'b1111 : 4'b0000;
     assign blue = blank ? 4'b0000 : withinConstraint ? 4'b1111 : 4'b0000;

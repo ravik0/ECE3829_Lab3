@@ -38,33 +38,22 @@ module lab3_top(
     wire clk_10M;
     
     //10Hz ENABLE SIGNAL SECTION
-    reg en_10Hz;
-    reg [23:0] counter10;
-    always @ (posedge clk)
-        begin
-            if(counter10 == 5000000-1) 
-                begin
-                    counter10 <= 0;
-                    en_10Hz <= en_10Hz == 1 ? 0 : 1;
-                end
-            else
-                begin
-                    counter10 <= counter10 + 1'b1;
-                end
-        end
+    wire en_10Hz;
+    reg [19:0] counter10;
+    always @ (posedge clk_10M, posedge reset)
+        if(reset) counter10 <= 0;
+        else if (counter10 <= 1000000-1) counter10 <= 0;
+        else counter10 <= counter10 + 1'b1;
+    assign en_10Hz = counter10 == 1000000-1;
         
     //100kHz CLK - Only down for 16 SCLK cycles, or 1600ns
-    reg clk_100K;
-    reg [6:0] counter100;
-    always @ (posedge clk_10M) //To keep the CS and SCLK synced, we derive the CS from SCLK.
-        if(clk_100K == 1 && counter100 == 100-1) begin
-            counter100 <= 0;
-            clk_100K <= 0;
-        end
-        else if (clk_100K == 0 && counter100 == 16-1) begin
-            clk_100K <= 1;
-        end
+    wire clk_100K;
+    reg [6:0] counter100; //needs to hold up to 99. 2^7 = 128 > 99
+    always @ (posedge clk_10M, posedge reset) //To keep the CS and SCLK synced, we derive the CS from SCLK rather than the FPGA clk.
+        if(reset) counter100 <= 0;
+        else if (counter100 == 100-1) counter100 <= 0;
         else counter100 <= counter100 + 1'b1;
+    assign clk_100K = counter100 < 16;
                 
     
     wire locked; //Locked signal to tell whether the MMCM is generating clock or not. Not currently used.
@@ -93,19 +82,80 @@ module lab3_top(
     assign B = posV >= 10 ? 4'b0001 : 4'b0000; //Same logic as D
     assign A = posV >= 10 ? posV-10 : posV; //Same logic as C
     //Debouncing the 4 buttons using a 10Hz clock.
-    debounce(.clk(en_10Hz), .reset(reset), .btn(btnU), .newBtn(up));
-    debounce(.clk(en_10Hz), .reset(reset), .btn(btnD), .newBtn(down));
-    debounce(.clk(en_10Hz), .reset(reset), .btn(btnL), .newBtn(left));
-    debounce(.clk(en_10Hz), .reset(reset), .btn(btnR), .newBtn(right)); 
+    debounce d1(
+        .clk(en_10Hz), 
+        .reset(reset), 
+        .btn(btnU), 
+        .newBtn(up)
+    );
+    
+    debounce d2(
+        .clk(en_10Hz), 
+        .reset(reset), 
+        .btn(btnD), 
+        .newBtn(down)
+    );
+    
+    debounce d3(
+        .clk(en_10Hz), 
+        .reset(reset), 
+        .btn(btnL), 
+        .newBtn(left)
+    );
+    
+    debounce d4(
+        .clk(en_10Hz), 
+        .reset(reset), 
+        .btn(btnR), 
+        .newBtn(right)
+    ); 
      
-    movement_logic(.clk(en_10Hz), .posH(posH), .posV(posV), .btnU(up), .btnD(down), .btnL(left), .btnR(right), .reset(reset),
-    .blank(blank), .hcount(hCount), .vcount(vCount), .red(vgaRed), .blue(vgaBlue), .green(vgaGreen));
-    vga_controller_640_60 u2(.rst(reset), .pixel_clk(clk_25M), .HS(hSync), .VS(vSync), .hcount(hCount), .vcount(vCount), .blank(blank));
+    movement_logic u1(
+        .clk(en_10Hz), 
+        .posH(posH), 
+        .posV(posV), 
+        .btnU(up), .btnD(down), 
+        .btnL(left), 
+        .btnR(right), 
+        .reset(reset),
+        .blank(blank), 
+        .hcount(hCount), 
+        .vcount(vCount), 
+        .red(vgaRed), 
+        .blue(vgaBlue), 
+        .green(vgaGreen)
+    );
+    
+    vga_controller_640_60 u2(
+        .rst(reset), 
+        .pixel_clk(clk_25M), 
+        .HS(hSync), 
+        .VS(vSync), 
+        .hcount(hCount), 
+        .vcount(vCount), 
+        .blank(blank)
+    );
     //VGA controller takes in a reset signal (to redraw the screen), a 25MHz clock, and outputs hSync/vSync signals, as well as outputs the current
     //vertical and horizontal pixel location that it's working on. It also outputs blank, which says if the pixel it is working on is off the screen
     //or not. Description written here as can't write in VGA controller module. 
-    seven_seg(.clk(clk_25M), .A(A), .B(B), .C(C), .D(D), .SEG(SEG), .ANODE(ANODE));
-    PmodDAC(.SCLK(clk_10M), .CS(clk_100K), .reset(reset), .DO(DO));
+    
+    seven_seg u3(
+        .clk(clk_25M), 
+        .A(A), 
+        .B(B), 
+        .C(C), 
+        .D(D), 
+        .reset(reset),
+        .SEG(SEG), 
+        .ANODE(ANODE)
+    );
+    
+    PmodDAC u4(
+        .SCLK(clk_10M), 
+        .CS(clk_100K), 
+        .reset(reset), 
+        .DO(DO)
+    );
     
     assign SCLK = clk_10M;
     assign CS = clk_100K;
