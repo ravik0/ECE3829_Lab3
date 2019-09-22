@@ -53,7 +53,7 @@ module lab3_top(
         if(reset) counter100 <= 0;
         else if (counter100 == 100-1) counter100 <= 0;
         else counter100 <= counter100 + 1'b1;
-    assign clk_100K = counter100 < 16;
+    assign clk_100K = counter100 > 16;
                 
     
     wire locked; //Locked signal to tell whether the MMCM is generating clock or not. Not currently used.

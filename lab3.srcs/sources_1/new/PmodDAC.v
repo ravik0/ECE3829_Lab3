@@ -59,7 +59,19 @@ module PmodDAC(
     reg shiftedState; //Tells the FPGA whether the state has been shifted. 
     
     always @ (posedge SCLK, posedge reset)
-        if(reset) values <= 16'b0; 
+        if(reset) begin
+            values <= 16'b0; 
+            current_state <= s0;
+            next_state <= s0;
+            shiftedState <= 1'b0;
+            DO <= 1'b0;
+        end
+        else if(CS == 0) begin
+            shiftedState <= 1'b0;
+            DO <= values[15];
+            values <= {values[14:0], 1'b0};
+            //If CS is 0, every posedge SCLK shift a new data value to the DAC and set shiftedState to 0.
+        end
         else if (CS == 1) begin
                 current_state <= next_state; //If CS == 1, change the current state
                 if(!shiftedState) //If we haven't shifted the state already, then shift next_state along.
@@ -172,12 +184,6 @@ module PmodDAC(
                             shiftedState <= 1'b1;
                         end
                     endcase
-        else begin
-            shiftedState <= 1'b0;
-            DO <= values[15];
-            values <= {values[14:0], 1'b0};
-            //If CS is 0, every posedge SCLK shift a new data value to the DAC and set shiftedState to 0.
-        end
     end
             
     
